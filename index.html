@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Pendientes" />
+<meta name="theme-color" content="#4f6ef7" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<title>Pendientes FONACOT Sur</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap');
+
+  :root {
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --card:    #21253a;
+    --border:  #2e3348;
+    --accent:  #4f6ef7;
+    --text:    #e8eaf2;
+    --muted:   #6b7394;
+    --red:     #e05c6a;
+    --orange:  #f0924a;
+    --yellow:  #f0c94a;
+    --green:   #4acf8c;
+    --radius:  12px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { height: 100%; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bot);
+    overscroll-behavior: none;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #12152a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+  .logo span { color: var(--accent); }
+  .date-badge {
+    font-size: .72rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 14px 16px 0;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .stat .num { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+  .stat .lbl { font-size: .62rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .stat.urgente .num { color: var(--red); }
+  .stat.alta    .num { color: var(--orange); }
+  .stat.media   .num { color: var(--yellow); }
+  .stat.baja    .num { color: var(--green); }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: .85rem;
+    padding: 9px 12px 9px 36px;
+    outline: none;
+    transition: border-color .2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: .85rem;
+    pointer-events: none;
+  }
+  .filters {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+  .filters select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: .78rem;
+    padding: 8px 8px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: border-color .2s;
+  }
+  .filters select:focus { border-color: var(--accent); }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: calc(20px + var(--safe-bot));
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(79,110,247,.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 150;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .fab:active { transform: scale(.93); box-shadow: 0 2px 10px rgba(79,110,247,.4); }
+
+  /* ── List ── */
+  .list-wrap {
+    padding: 0 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .section-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin: 10px 0 2px;
+    font-weight: 600;
+  }
+  .task-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 12px 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: opacity .3s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .task-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+  }
+  .task-card.urgente::before { background: var(--red); }
+  .task-card.alta::before    { background: var(--orange); }
+  .task-card.media::before   { background: var(--yellow); }
+  .task-card.baja::before    { background: var(--green); }
+  .task-card.done { opacity: .4; }
+  .task-card.done .task-title { text-decoration: line-through; }
+  .task-card.vencida { border-color: rgba(224,92,106,.35); }
+
+  .task-cb {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, border-color .2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .task-cb.checked { background: var(--green); border-color: var(--green); }
+  .task-cb svg { display: none; }
+  .task-cb.checked svg { display: block; }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-size: .92rem; font-weight: 500; line-height: 1.35; word-break: break-word; }
+  .task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+    align-items: center;
+  }
+  .badge {
+    font-size: .64rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .badge.urgente { background: rgba(224,92,106,.18); color: var(--red); }
+  .badge.alta    { background: rgba(240,146,74,.18); color: var(--orange); }
+  .badge.media   { background: rgba(240,201,74,.18); color: var(--yellow); }
+  .badge.baja    { background: rgba(74,207,140,.18); color: var(--green); }
+  .badge.vencida { background: rgba(224,92,106,.25); color: var(--red); border: 1px solid rgba(224,92,106,.4); }
+  .badge.dias    { background: var(--surface); color: var(--muted); }
+
+  .task-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .82rem;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .15s, color .15s;
+  }
+  .icon-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .icon-btn.del:active { background: var(--red); border-color: var(--red); }
+
+  /* ── Empty ── */
+  .empty {
+    text-align: center;
+    padding: 52px 24px;
+    color: var(--muted);
+  }
+  .empty .ico { font-size: 3rem; margin-bottom: 12px; opacity: .4; }
+  .empty p { font-size: .88rem; line-height: 1.5; }
+
+  /* ── Bottom Sheet Modal ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+  }
+  .overlay.hidden { display: none; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    padding: 20px 20px calc(20px + var(--safe-bot));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: slideUp .22s ease;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto -4px;
+    flex-shrink: 0;
+  }
+  .modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: .72rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: .9rem;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .2s;
+    resize: vertical;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus { border-color: var(--accent); }
+  .form-row { display: flex; gap: 10px; }
+  .form-row .form-group { flex: 1; }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn {
+    flex: 1;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .15s;
+  }
+  .btn:active { opacity: .8; }
+  .btn.ghost {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: calc(88px + var(--safe-bot));
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #2a2f45;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: .82rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    transition: transform .25s ease, opacity .25s;
+    opacity: 0;
+    z-index: 300;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── Install banner ── */
+  .install-banner {
+    background: linear-gradient(135deg, #1e2240, #1a2060);
+    border-bottom: 1px solid rgba(79,110,247,.3);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .82rem;
+  }
+  .install-banner.hidden { display: none; }
+  .install-banner .msg { flex: 1; color: var(--text); line-height: 1.4; }
+  .install-banner .msg strong { color: #fff; }
+  .btn-install {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-dismiss {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+
+<!-- Install banner -->
+<div class="install-banner hidden" id="installBanner">
+  <div class="msg"><strong>Instala la app</strong><br>Agrégala a tu pantalla de inicio para acceso rápido</div>
+  <button class="btn-install" id="btnInstall">Instalar</button>
+  <button class="btn-dismiss" onclick="dismissInstall()">✕</button>
+</div>
+
+<header>
+  <div class="logo">Pendientes <span>Sur</span></div>
+  <div class="date-badge" id="dateBadge"></div>
+</header>
+
+<div class="stats">
+  <div class="stat urgente"><div class="num" id="cUrgente">0</div><div class="lbl">🔴 Urgente</div></div>
+  <div class="stat alta">   <div class="num" id="cAlta">0</div>   <div class="lbl">🟠 Alta</div></div>
+  <div class="stat media">  <div class="num" id="cMedia">0</div>  <div class="lbl">🟡 Media</div></div>
+  <div class="stat baja">   <div class="num" id="cBaja">0</div>   <div class="lbl">🟢 Baja</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Buscar asunto…" oninput="renderList()" />
+  </div>
+  <div class="filters">
+    <select id="filterPrio" onchange="renderList()">
+      <option value="">Todas las prioridades</option>
+      <option value="urgente">🔴 Urgente</option>
+      <option value="alta">🟠 Alta</option>
+      <option value="media">🟡 Media</option>
+      <option value="baja">🟢 Baja</option>
+    </select>
+    <select id="filterStatus" onchange="renderList()">
+      <option value="pendiente">Solo pendientes</option>
+      <option value="todos">Todos</option>
+      <option value="concluido">Concluidos</option>
+    </select>
+  </div>
+</div>
+
+<div class="list-wrap" id="listWrap"></div>
+
+<button class="fab" onclick="openModal()" title="Nuevo asunto">＋</button>
+
+<!-- Bottom Sheet -->
+<div class="overlay hidden" id="overlay" onclick="closeOnBackdrop(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <h2 id="modalTitle">Nuevo asunto</h2>
+
+    <div class="form-group">
+      <label>Asunto *</label>
+      <textarea id="fTitulo" rows="3" placeholder="Describe el asunto pendiente…"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Prioridad</label>
+        <select id="fPrio">
+          <option value="urgente">🔴 Urgente</option>
+          <option value="alta">🟠 Alta</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha límite</label>
+        <input type="date" id="fFecha" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notas / Responsable</label>
+      <textarea id="fNotas" rows="2" placeholder="Área, responsable, contexto…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveTask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──
+const KEY = 'pendientes_fonacot_v1';
+let tasks = [];
+let editingId = null;
+
+function load() {
+  try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch { tasks = []; }
+  tasks = tasks.map(t => ({
+    id:        t.id || (Date.now() + Math.random()),
+    titulo:    t.titulo || t.title || '',
+    prioridad: t.prioridad || t.priority || 'media',
+    fecha:     t.fecha || t.deadline || '',
+    notas:     t.notas || t.notes || '',
+    done:      !!t.done,
+    creado:    t.creado || today(),
+  }));
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(tasks)); }
+
+// ── Dates ──
+function today() { return new Date().toISOString().slice(0,10); }
+function diffDays(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000); }
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function isVencida(t) { return t.fecha && !t.done && t.fecha < today(); }
+
+const prioOrder = { urgente:0, alta:1, media:2, baja:3 };
+const prioLabel = { urgente:'🔴 Urgente', alta:'🟠 Alta', media:'🟡 Media', baja:'🟢 Baja' };
+
+// ── Date badge ──
+function updateDateBadge() {
+  const now = new Date();
+  const opts = { weekday:'short', day:'numeric', month:'short' };
+  document.getElementById('dateBadge').textContent = now.toLocaleDateString('es-MX', opts);
+}
+
+// ── Stats ──
+function updateStats() {
+  const p = tasks.filter(t => !t.done);
+  document.getElementById('cUrgente').textContent = p.filter(t=>t.prioridad==='urgente').length;
+  document.getElementById('cAlta').textContent    = p.filter(t=>t.prioridad==='alta').length;
+  document.getElementById('cMedia').textContent   = p.filter(t=>t.prioridad==='media').length;
+  document.getElementById('cBaja').textContent    = p.filter(t=>t.prioridad==='baja').length;
+}
+
+// ── Render ──
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderList() {
+  const q  = document.getElementById('searchInput').value.toLowerCase();
+  const fp = document.getElementById('filterPrio').value;
+  const fs = document.getElementById('filterStatus').value;
+  const td = today();
+
+  let list = tasks.filter(t => {
+    if (fp && t.prioridad !== fp) return false;
+    if (fs === 'pendiente' && t.done) return false;
+    if (fs === 'concluido' && !t.done) return false;
+    if (q && !t.titulo.toLowerCase().includes(q) && !(t.notas||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  list.sort((a,b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    if (prioOrder[a.prioridad] !== prioOrder[b.prioridad])
+      return prioOrder[a.prioridad] - prioOrder[b.prioridad];
+    if (isVencida(a) !== isVencida(b)) return isVencida(a) ? -1 : 1;
+    if (a.fecha && b.fecha) return a.fecha.localeCompare(b.fecha);
+    return a.fecha ? -1 : (b.fecha ? 1 : 0);
+  });
+
+  const wrap = document.getElementById('listWrap');
+  if (list.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="ico">📋</div>
+      <p>No hay asuntos que mostrar.<br>Toca <strong>＋</strong> para registrar uno nuevo.</p></div>`;
+    updateStats(); return;
+  }
+
+  let html = '';
+  const headers = { pendiente:false, vencida:false, concluido:false };
+  const headerLbl = { pendiente:'📋 Pendientes', vencida:'⚠️ Vencidos', concluido:'✅ Concluidos' };
+
+  list.forEach(t => {
+    const v = isVencida(t);
+    const grupo = t.done ? 'concluido' : (v ? 'vencida' : 'pendiente');
+
+    if (!headers[grupo]) {
+      headers[grupo] = true;
+      html += `<div class="section-label">${headerLbl[grupo]}</div>`;
+    }
+
+    let diasTag = '';
+    if (t.fecha && !t.done) {
+      const diff = diffDays(td, t.fecha);
+      if (v)        diasTag = `<span class="badge vencida">Vencido hace ${Math.abs(diff)} día${Math.abs(diff)!==1?'s':''}</span>`;
+      else if (!diff) diasTag = `<span class="badge vencida">Vence hoy</span>`;
+      else           diasTag = `<span class="badge dias">Faltan ${diff} día${diff!==1?'s':''}</span>`;
+    }
+
+    html += `
+    <div class="task-card ${t.prioridad} ${t.done?'done':''} ${v&&!t.done?'vencida':''}">
+      <div class="task-cb ${t.done?'checked':''}" onclick="toggleDone('${t.id}')">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="task-body">
+        <div class="task-title">${esc(t.titulo)}</div>
+        <div class="task-meta">
+          <span class="badge ${t.prioridad}">${prioLabel[t.prioridad]}</span>
+          ${t.fecha ? `<span class="badge dias">📅 ${formatDate(t.fecha)}</span>` : ''}
+          ${diasTag}
+          ${t.notas ? `<span class="badge dias">📝 Nota</span>` : ''}
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="icon-btn" onclick="editTask('${t.id}')">✏️</button>
+        <button class="icon-btn del" onclick="deleteTask('${t.id}')">🗑</button>
+      </div>
+    </div>`;
+  });
+
+  wrap.innerHTML = html;
+  updateStats();
+}
+
+// ── Actions ──
+function toggleDone(id) {
+  const t = tasks.find(x => x.id == id);
+  if (!t) return;
+  t.done = !t.done;
+  save(); renderList();
+  showToast(t.done ? '✅ Asunto concluido' : '↩️ Marcado como pendiente');
+}
+function deleteTask(id) {
+  if (!confirm('¿Eliminar este asunto?')) return;
+  tasks = tasks.filter(x => x.id != id);
+  save(); renderList();
+  showToast('🗑 Eliminado');
+}
+function editTask(id) { openModal(id); }
+
+// ── Modal ──
+function openModal(id = null) {
+  editingId = id;
+  document.getElementById('overlay').classList.remove('hidden');
+  if (id) {
+    const t = tasks.find(x => x.id == id);
+    document.getElementById('modalTitle').textContent = 'Editar asunto';
+    document.getElementById('fTitulo').value = t.titulo;
+    document.getElementById('fPrio').value   = t.prioridad;
+    document.getElementById('fFecha').value  = t.fecha || '';
+    document.getElementById('fNotas').value  = t.notas || '';
+  } else {
+    document.getElementById('modalTitle').textContent = 'Nuevo asunto';
+    document.getElementById('fTitulo').value = '';
+    document.getElementById('fPrio').value   = 'media';
+    document.getElementById('fFecha').value  = '';
+    document.getElementById('fNotas').value  = '';
+  }
+}
+function closeModal() {
+  document.getElementById('overlay').classList.add('hidden');
+  editingId = null;
+}
+function closeOnBackdrop(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+function saveTask() {
+  const titulo = document.getElementById('fTitulo').value.trim();
+  if (!titulo) { showToast('⚠️ Escribe el asunto'); return; }
+  const data = {
+    titulo,
+    prioridad: document.getElementById('fPrio').value,
+    fecha:     document.getElementById('fFecha').value,
+    notas:     document.getElementById('fNotas').value.trim(),
+  };
+  if (editingId) {
+    Object.assign(tasks.find(x => x.id == editingId), data);
+    showToast('💾 Actualizado');
+  } else {
+    tasks.push({ ...data, id: Date.now() + Math.random(), done: false, creado: today() });
+    showToast('✅ Asunto registrado');
+  }
+  save(); closeModal(); renderList();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── PWA Install prompt ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('installDismissed')) {
+    document.getElementById('installBanner').classList.remove('hidden');
+  }
+});
+document.getElementById('btnInstall').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    document.getElementById('installBanner').classList.add('hidden');
+    showToast('🎉 App instalada correctamente');
+  }
+  deferredPrompt = null;
+});
+function dismissInstall() {
+  document.getElementById('installBanner').classList.add('hidden');
+  localStorage.setItem('installDismissed', '1');
+}
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.add('hidden');
+});
+
+// ── Service Worker ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── Init ──
+load();
+updateDateBadge();
+renderList();
+setInterval(updateDateBadge, 60000);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
